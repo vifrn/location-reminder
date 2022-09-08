@@ -122,5 +122,8 @@ dependencies {
     implementation "com.google.android.gms:play-services-location:$playServicesVersion"
     implementation "com.google.android.gms:play-services-maps:$playServicesVersion"
 
+    //Firebase BoM
+    implementation platform('com.google.firebase:firebase-bom:30.2.0')
+
 
 }
