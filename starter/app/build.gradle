@@ -16,6 +16,7 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        multiDexEnabled true
     }
     buildTypes {
         release {
@@ -37,6 +38,10 @@ android {
     //}
     buildFeatures {
         dataBinding true
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
@@ -122,8 +127,11 @@ dependencies {
     implementation "com.google.android.gms:play-services-location:$playServicesVersion"
     implementation "com.google.android.gms:play-services-maps:$playServicesVersion"
 
-    //Firebase BoM
-    implementation platform('com.google.firebase:firebase-bom:30.2.0')
+    //Firebase UI
+    implementation 'com.firebaseui:firebase-ui-auth:8.0.1'
+
+    //https://stackoverflow.com/questions/51341627/android-gives-error-cannot-fit-requested-classes-in-a-single-dex-file
+    implementation 'androidx.multidex:multidex:2.0.1'
 
 
 }
