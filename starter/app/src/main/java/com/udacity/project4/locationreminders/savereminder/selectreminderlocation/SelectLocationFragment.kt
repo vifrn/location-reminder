@@ -138,15 +138,14 @@ class SelectLocationFragment : BaseFragment() {
                 .addOnSuccessListener { location : Location? ->
                     // Got last known location. In some rare situations this can be null.
                     location?.let {
-                        val sydney = LatLng(it.latitude, it.longitude)
+                        val currentLocation = LatLng(it.latitude, it.longitude)
                         val zoomLevel = 15f
-                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney, zoomLevel))
+                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, zoomLevel))
                     }
                 }
         }
         else {
-            ActivityCompat.requestPermissions(
-                requireActivity(),
+            requestPermissions(
                 arrayOf<String>(Manifest.permission.ACCESS_FINE_LOCATION),
                 REQUEST_LOCATION_PERMISSION
             )
