@@ -7,9 +7,11 @@ import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.*
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.RootMatchers.withDecorView
 import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import com.google.android.material.internal.ContextUtils.getActivity
 import com.udacity.project4.locationreminders.RemindersActivity
 import com.udacity.project4.locationreminders.data.ReminderDataSource
 import com.udacity.project4.locationreminders.data.local.LocalDB
@@ -19,7 +21,10 @@ import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.util.DataBindingIdlingResource
 import com.udacity.project4.util.monitorActivity
 import com.udacity.project4.utils.EspressoIdlingResource
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.CoreMatchers.not
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -102,6 +107,13 @@ class RemindersActivityTest :
         //Navigate to Add Reminder screen
         onView(withId(R.id.addReminderFAB)).perform(click())
 
+        //Check if error message is displayed on snackback when trying to save a reminder without title
+        onView(withId(R.id.saveReminder)).perform(click())
+        onView(withId(com.google.android.material.R.id.snackbar_text))
+            .check(matches(withText(R.string.err_enter_title)))
+        //Wait until snackbar goes away | ref: https://github.com/material-components/material-components-android/blob/1f6ebe9e7bb224cc3adc60de3944adfb9e8eaacb/lib/java/com/google/android/material/snackbar/SnackbarManager.java#L32
+        delay(2750)
+
         //Add test title and description
         onView(withId(R.id.reminderTitle)).perform(replaceText(testTitle))
         onView(withId(R.id.reminderDescription)).perform(replaceText(testDescription))
@@ -119,6 +131,11 @@ class RemindersActivityTest :
         //Check if we have a Reminder with the correct Title and Description
         onView(withText(testTitle)).check(matches(isDisplayed()))
         onView(withText(testDescription)).check(matches(isDisplayed()))
+
+        //Check success toast
+        onView(withText(R.string.reminder_saved))
+            .inRoot(withDecorView(not(`is`(getActivity(appContext)?.window?.decorView))))
+            .check(matches(isDisplayed()));
 
         activityScenario.close()
     }

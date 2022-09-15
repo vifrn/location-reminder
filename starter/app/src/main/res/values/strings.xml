@@ -20,6 +20,7 @@
     <string name="dropped_pin">Dropped Pin</string>
     <string name="poi">poi</string>
     <string name="location_required_error">Location services must be enabled to use the app</string>
+    <string name="location_required_map_error">Location services must be enabled to see your location on the map</string>
     <string name="foreground_permission_denied_explanation">You need to grant location permission in order to select the location.</string>
     <string name="background_permission_denied_explanation">You need to grant background location permission in order to be reminded</string>
     <string name="dialog_message_background_permission">We need your permission to check your location while the app is on background. Please choose \"Allow all the time\" so we can remind you when you reach the selected place.</string>

@@ -15,7 +15,7 @@ class FakeDataSource : ReminderDataSource {
 
     override suspend fun getReminders(): Result<List<ReminderDTO>> {
         if (shouldReturnError) {
-            return Result.Error("Everything is 'fine'. This is a test error.")
+            return Result.Error("Unable to get the reminders.")
         }
         return Result.Success(ArrayList(reminders))
     }
@@ -26,7 +26,7 @@ class FakeDataSource : ReminderDataSource {
 
     override suspend fun getReminder(id: String): Result<ReminderDTO> {
         if (shouldReturnError) {
-            return Result.Error("Everything is 'fine'. This is a test error.")
+            return Result.Error("Unable to get the reminder by ID")
         }
 
         for (rem in reminders) {

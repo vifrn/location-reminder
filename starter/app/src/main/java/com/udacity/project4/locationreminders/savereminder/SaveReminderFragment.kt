@@ -3,6 +3,7 @@ package com.udacity.project4.locationreminders.savereminder
 import android.Manifest
 import android.annotation.SuppressLint
 import android.annotation.TargetApi
+import android.app.Activity
 import android.app.AlertDialog
 import android.app.PendingIntent
 import android.content.Intent
@@ -31,7 +32,7 @@ import com.udacity.project4.locationreminders.geofence.GeofenceBroadcastReceiver
 import com.udacity.project4.locationreminders.geofence.GeofencingConstants.ACTION_GEOFENCE_INTENT
 import com.udacity.project4.locationreminders.geofence.GeofencingConstants.GEOFENCE_RADIUS_IN_METERS
 import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
-import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
+import com.udacity.project4.utils.*
 import org.koin.android.ext.android.inject
 
 class SaveReminderFragment : BaseFragment() {
@@ -76,9 +77,6 @@ class SaveReminderFragment : BaseFragment() {
                 NavigationCommand.To(SaveReminderFragmentDirections.actionSaveReminderFragmentToSelectLocationFragment())
         }
 
-        requestForegroundLocationPermissions()
-        checkDeviceLocationSettings()
-
         binding.saveReminder.setOnClickListener {
 
             reminder = ReminderDataItem(
@@ -89,9 +87,18 @@ class SaveReminderFragment : BaseFragment() {
                 _viewModel.longitude.value)
 
             if(_viewModel.validateEnteredData(reminder)) {
-                requestBackgroundLocationPermissions()
-                checkDeviceLocationSettings()
+                preGeofenceChecking()
             }
+        }
+    }
+
+    private fun preGeofenceChecking() {
+        if(!foregroundLocationPermissionApproved()) {
+            requestForegroundLocationPermissions()
+        } else if (!backgroundLocationPermissionApproved()) {
+            requestBackgroundLocationPermissions()
+        } else {
+            checkDeviceLocationSettings()
         }
     }
 
@@ -150,32 +157,25 @@ class SaveReminderFragment : BaseFragment() {
                     resultCode
                 )
             }.setNegativeButton(R.string.dialog_cancel_option) { dialog, id ->
-                showSnackbarWithMessage(R.string.background_permission_denied_explanation)
+                showSnackbarWithMessage(this, R.string.background_permission_denied_explanation)
             }.show()
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE == requestCode
-            && !foregroundLocationPermissionApproved()) {
-                showSnackbarWithMessage(R.string.foreground_permission_denied_explanation)
+        if (REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE == requestCode){
+            if(!foregroundLocationPermissionApproved()) {
+                    showSnackbarWithMessage(this, R.string.foreground_permission_denied_explanation)
+            } else {
+                preGeofenceChecking()
+            }
+        } else if (REQUEST_BACKGROUND_ONLY_PERMISSIONS_REQUEST_CODE == requestCode) {
+            if (!backgroundLocationPermissionApproved()) {
+                showSnackbarWithMessage(this, R.string.background_permission_denied_explanation)
+            } else {
+                preGeofenceChecking()
+            }
         }
-
-        if (REQUEST_BACKGROUND_ONLY_PERMISSIONS_REQUEST_CODE == requestCode
-        && !backgroundLocationPermissionApproved()) {
-            showSnackbarWithMessage(R.string.background_permission_denied_explanation)
-        }
-    }
-
-    private fun showSnackbarWithMessage(@StringRes message : Int) {
-        Snackbar.make(requireActivity().findViewById(android.R.id.content), message, Snackbar.LENGTH_LONG)
-            .setAction("Allow") {
-                startActivity(Intent().apply {
-                    action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                    data = Uri.fromParts("package", BuildConfig.APPLICATION_ID, null)
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                })
-            }.show()
     }
 
     private fun checkDeviceLocationSettings(resolve:Boolean = true) {
@@ -189,19 +189,12 @@ class SaveReminderFragment : BaseFragment() {
         locationSettingsResponseTask.addOnFailureListener { exception ->
             if (exception is ResolvableApiException && resolve){
                 try {
-                    exception.startResolutionForResult(requireActivity(),
-                        REQUEST_TURN_DEVICE_LOCATION_ON
-                    )
+                    startIntentSenderForResult(exception.resolution.intentSender, REQUEST_TURN_DEVICE_LOCATION_ON, null, 0, 0, 0, null)
                 } catch (sendEx: IntentSender.SendIntentException) {
                     Log.d(TAG, "Error getting location settings resolution: " + sendEx.message)
                 }
             } else {
-                Snackbar.make(
-                    binding.root,
-                    R.string.location_required_error, Snackbar.LENGTH_INDEFINITE
-                ).setAction(android.R.string.ok) {
-                    checkDeviceLocationSettings()
-                }.show()
+                showSnackbarWithLocationServicesError()
             }
         }
         locationSettingsResponseTask.addOnCompleteListener {
@@ -209,6 +202,24 @@ class SaveReminderFragment : BaseFragment() {
                 addReminderGeofence()
             }
         }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if(requestCode == REQUEST_TURN_DEVICE_LOCATION_ON && resultCode == Activity.RESULT_OK) {
+            addReminderGeofence()
+        } else {
+            showSnackbarWithLocationServicesError()
+        }
+    }
+
+    private fun showSnackbarWithLocationServicesError () {
+        Snackbar.make(
+            binding.root,
+            R.string.location_required_error, Snackbar.LENGTH_LONG
+        ).setAction(android.R.string.ok) {
+            checkDeviceLocationSettings()
+        }.show()
     }
 
     @SuppressLint("MissingPermission")
@@ -251,6 +262,3 @@ class SaveReminderFragment : BaseFragment() {
 }
 
 private const val TAG = "SaveReminderFragment"
-private const val REQUEST_BACKGROUND_ONLY_PERMISSIONS_REQUEST_CODE = 33
-private const val REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE = 34
-private const val REQUEST_TURN_DEVICE_LOCATION_ON = 29

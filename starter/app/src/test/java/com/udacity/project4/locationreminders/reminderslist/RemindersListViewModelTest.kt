@@ -75,7 +75,7 @@ class RemindersListViewModelTest {
         fakeDataSource.setReturnError(true)
         remindersListViewModel.loadReminders()
 
-        assertThat(remindersListViewModel.showSnackBar.getOrAwaitValue(), `is`(not("")))
+        assertThat(remindersListViewModel.showSnackBar.getOrAwaitValue(), `is`("Unable to get the reminders."))
     }
 
     fun createTestReminderDTO () : ReminderDTO {
