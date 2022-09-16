@@ -61,7 +61,7 @@ class SelectLocationFragment : BaseFragment() {
         val zoomLevel = 15f
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(googleplex, zoomLevel))
 
-        checkDeviceLocationSettings()
+        requestForegroundLocationPermissions()
         setMapLongClick(map)
         setPoiClick(map)
         setMapStyle(map)
@@ -178,52 +178,7 @@ class SelectLocationFragment : BaseFragment() {
             && !foregroundLocationPermissionApproved()) {
             showSnackbarWithMessage(this, R.string.foreground_permission_denied_explanation)
         } else {
-            checkDeviceLocationSettings()
-        }
-    }
-
-    private fun checkDeviceLocationSettings(resolve:Boolean = true) {
-        val locationRequest = LocationRequest.create().apply {
-            priority = LocationRequest.PRIORITY_LOW_POWER
-        }
-        val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
-        val settingsClient = LocationServices.getSettingsClient(requireActivity())
-        val locationSettingsResponseTask =
-            settingsClient.checkLocationSettings(builder.build())
-        locationSettingsResponseTask.addOnFailureListener { exception ->
-            if (exception is ResolvableApiException && resolve){
-                try {
-                    startIntentSenderForResult(exception.resolution.intentSender, REQUEST_TURN_DEVICE_LOCATION_ON, null, 0, 0, 0, null)
-                } catch (sendEx: IntentSender.SendIntentException) {
-                    Log.d(TAG, "Error getting location settings resolution: " + sendEx.message)
-                }
-            } else {
-                Snackbar.make(
-                    binding.root,
-                    R.string.location_required_error, Snackbar.LENGTH_INDEFINITE
-                ).setAction(android.R.string.ok) {
-                    checkDeviceLocationSettings()
-                }.show()
-            }
-        }
-        locationSettingsResponseTask.addOnCompleteListener {
-            if ( it.isSuccessful ) {
-                enableMyLocation()
-            }
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if(requestCode == REQUEST_TURN_DEVICE_LOCATION_ON && resultCode == Activity.RESULT_OK) {
             enableMyLocation()
-        } else {
-            Snackbar.make(
-                binding.root,
-                R.string.location_required_map_error, Snackbar.LENGTH_LONG
-            ).setAction(android.R.string.ok) {
-                checkDeviceLocationSettings()
-            }.show()
         }
     }
 
